@@ -1,9 +1,7 @@
+import { Card, Spinner } from '@heroui/react'
 import { useEffect, useState } from 'react'
-import { ErrorAlert } from '@/components/ui/Alert'
-import { Spinner } from '@/components/ui/Spinner'
+import { ErrorAlert } from '@/components/ui/ErrorAlert'
 import { getDocumentUrl } from '../api'
-
-
 
 // The PDF is downloaded into a local blob: Storage may serve the file with
 // headers that prevent displaying it directly inside an iframe.
@@ -40,17 +38,19 @@ export function PdfViewer({ documentId, title, page }) {
   }
 
   return (
-    <div
-      className="sm-sheet"
-      style={{ position: 'relative', height: '78vh', minHeight: 420, padding: 0, overflow: 'hidden' }}
-    >
+    <Card className="relative h-[78vh] min-h-[420px] overflow-hidden p-0">
       {state.status === 'loading' ? (
-        <div className="grid h-full place-items-center" role="status" style={{ color: 'var(--ink-muted)' }}>
+        <div className="grid h-full place-items-center" role="status">
           <Spinner />
         </div>
       ) : (
-        <iframe key={page} title={title} src={page ? `${state.src}#page=${page}` : state.src} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
+        <iframe
+          key={page}
+          title={title}
+          src={page ? `${state.src}#page=${page}` : state.src}
+          className="absolute inset-0 h-full w-full border-0"
+        />
       )}
-    </div>
+    </Card>
   )
 }

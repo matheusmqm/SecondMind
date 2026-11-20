@@ -1,21 +1,21 @@
+import { Separator } from '@heroui/react'
 import { Link, Outlet } from 'react-router-dom'
 import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 export function AppLayout() {
   return (
-    <div className="sm-page min-h-dvh">
-      <header className="sm-topbar">
-        <div className="sm-topbar-in">
-          <Link to="/" aria-label="SecondMind: home" className="rounded-md">
+    <div className="min-h-dvh">
+      <header className="sticky top-0 z-10 bg-surface">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <Link to="/" aria-label="SecondMind: home" className="rounded-lg">
             <Logo />
           </Link>
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
-          </div>
+          <ThemeToggle />
         </div>
+        <Separator />
       </header>
-      <main className="sm-container">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <Outlet />
       </main>
     </div>

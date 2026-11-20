@@ -1,3 +1,4 @@
+import { toast } from '@heroui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { errorMessage, fileExtension, MAX_UPLOAD_MB } from '@/lib/utils'
@@ -19,11 +20,19 @@ export function useDeleteDocument() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: deleteDocument,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: DOCUMENTS_KEY }),
+    onSuccess: () => {
+      toast.success('Document deleted')
+      return queryClient.invalidateQueries({ queryKey: DOCUMENTS_KEY })
+    },
+    onError: (error) => toast.danger('Could not delete the document', { description: errorMessage(error) }),
   })
 }
 
-export const useDownloadDocument = () => useMutation({ mutationFn: downloadDocument })
+export const useDownloadDocument = () =>
+  useMutation({
+    mutationFn: downloadDocument,
+    onError: (error) => toast.danger('Could not download the file', { description: errorMessage(error) }),
+  })
 
 // ---------------------------------------------------------------------------
 // Upload queue: several files at once, two in parallel.
@@ -60,7 +69,10 @@ export function useUploadQueue() {
       const next = pending.current.shift()
       running.current++
       uploadDocument(next.file)
-        .then(() => patch(next.id, { status: 'done' }))
+        .then(() => {
+          patch(next.id, { status: 'done' })
+          toast.success('Upload complete', { description: next.file.name })
+        })
         .catch((error) => patch(next.id, { status: 'error', error: errorMessage(error) }))
         .finally(() => {
           running.current--

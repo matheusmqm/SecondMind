@@ -13,7 +13,7 @@ Text answers cite the file and page. Numbers are calculated with real SQL, not g
 ![Ollama](https://img.shields.io/badge/Ollama-bge--m3-000000)
 ![Claude](https://img.shields.io/badge/Claude-Anthropic_API-D97757)
 
-<img src="docs/screenshots/library-light.png" alt="SecondMind answering a question that crosses a PDF and an Excel file (Paper theme)" width="92%" />
+<img src="docs/screenshots/library-light.png" alt="SecondMind answering a question that crosses a PDF and an Excel file (light theme)" width="92%" />
 
 <sub>A question answered from a PDF **and** an Excel file, with the source of each number. Screenshots use fictional sample data.</sub>
 
@@ -42,7 +42,7 @@ Text answers cite the file and page. Numbers are calculated with real SQL, not g
 
 ### Themes
 
-The **Paper** and **Night** themes of the "brainstorming notebook" identity. Your choice is remembered.
+Light and dark themes from [HeroUI](https://heroui.com). Your choice is remembered, and it follows the system until you pick one.
 
 <p align="center">
   <img src="docs/screenshots/library-light.png" alt="Paper (light) theme" width="49%" />
@@ -257,7 +257,7 @@ Model errors: timeout → 504, rate limit → 429, invalid key/credit → 502, O
 
 ## Frontend
 
-React + Vite, Axios, Tailwind v4, React Router and TanStack Query, with the **SecondMind** identity (the "brainstorming notebook": paper, ink, blue pen and highlighter; *Paper* and *Night* themes).
+React + Vite, Axios, Tailwind v4, React Router and TanStack Query, with the UI built on [HeroUI v3](https://heroui.com) (`@heroui/react`, free components only). Light and dark themes come from HeroUI's default tokens.
 
 - `/`: your files (multi-file upload of PDF, Excel and CSV, processing status, search by name, download and delete) next to a chat over the whole base, with clickable sources and the "how this answer was built" trace.
 - `/documents/:id?page=N`: a PDF opened at the cited page, or a spreadsheet preview with one tab per sheet.
@@ -290,7 +290,7 @@ app/
   core/config.py           # environment variables
   db/client.py             # Supabase client (service role)
   db/vector_store.py       # chunk inserts and the match_chunks RPC
-frontend/                  # React + Vite with the SecondMind identity
+frontend/                  # React + Vite with HeroUI v3
 docs/screenshots/          # images used in this README
 docs/test-data/            # fictional sample files and expected answers
 ```

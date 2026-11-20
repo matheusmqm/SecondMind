@@ -1,10 +1,10 @@
+import { Button, buttonVariants, Skeleton, useOverlayState } from '@heroui/react'
 import { ArrowLeft, Download, Trash2 } from 'lucide-react'
-import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ErrorAlert } from '@/components/ui/Alert'
-import { Button } from '@/components/ui/Button'
-import { FileStamp } from '@/components/ui/FileStamp'
+import { ErrorAlert } from '@/components/ui/ErrorAlert'
+import { FileTypeChip } from '@/components/ui/FileTypeChip'
 import { errorMessage } from '@/lib/utils'
+import { DeleteDialog } from '../components/DeleteDialog'
 import { PdfViewer } from '../components/PdfViewer'
 import { SheetViewer } from '../components/SheetViewer'
 import { useDeleteDocument, useDocuments, useDownloadDocument } from '../useDocuments'
@@ -17,24 +17,24 @@ export default function DocumentPage() {
   const documents = useDocuments()
   const download = useDownloadDocument()
   const remove = useDeleteDocument()
-  const [confirming, setConfirming] = useState(false)
+  const dialog = useOverlayState()
   const doc = documents.data?.find((item) => item.id === id)
 
   if (documents.isPending) {
     return (
-      <div className="sm-stack" aria-hidden>
-        <div className="sm-skeleton" style={{ height: 120 }} />
-        <div className="sm-skeleton" style={{ height: 240 }} />
+      <div className="space-y-4" aria-hidden>
+        <Skeleton className="h-28 w-full rounded-2xl" />
+        <Skeleton className="h-60 w-full rounded-2xl" />
       </div>
     )
   }
   if (documents.isError) return <ErrorAlert>{errorMessage(documents.error)}</ErrorAlert>
   if (!doc) {
     return (
-      <div className="sm-empty">
-        <p className="sm-empty-title">Document not found</p>
-        <p className="mt-1 mb-4">It may have been deleted.</p>
-        <Link to="/" className="sm-btn sm-btn--outline">
+      <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+        <p className="m-0 font-medium">Document not found</p>
+        <p className="mt-1 mb-4 text-sm text-muted">It may have been deleted.</p>
+        <Link to="/" className={buttonVariants({ variant: 'secondary' })}>
           Back to documents
         </Link>
       </div>
@@ -44,50 +44,33 @@ export default function DocumentPage() {
   const isSpreadsheet = doc.file_type === 'xlsx' || doc.file_type === 'csv'
 
   return (
-    <div className="sm-rise">
-      <Link to="/" className="sm-btn sm-btn--ghost sm-btn--sm mb-3" style={{ marginLeft: -12 }}>
-        <ArrowLeft className="sm-ico" style={{ width: 16, height: 16 }} aria-hidden />
+    <div>
+      <Link to="/" className={buttonVariants({ variant: 'ghost', size: 'sm', className: '-ml-3 mb-3' })}>
+        <ArrowLeft className="size-4" aria-hidden />
         Documents
       </Link>
 
-      <header className="sm-pagehead flex flex-wrap items-center gap-4">
-        <FileStamp ext={doc.file_type ?? 'pdf'} size="xl" />
-        <h1 className="display-md m-0 min-w-0 flex-1" style={{ overflowWrap: 'anywhere' }}>
-          {doc.filename}
-        </h1>
+      <header className="mb-6 flex flex-wrap items-center gap-4">
+        <FileTypeChip ext={doc.file_type ?? 'pdf'} size="lg" />
+        <h1 className="m-0 min-w-0 flex-1 text-2xl font-semibold [overflow-wrap:anywhere]">{doc.filename}</h1>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" loading={download.isPending} onClick={() => download.mutate(doc.id)}>
-            <Download className="sm-ico" style={{ width: 16, height: 16 }} aria-hidden />
+          <Button variant="secondary" size="sm" isPending={download.isPending} onPress={() => download.mutate(doc.id)}>
+            <Download className="size-4" aria-hidden />
             Download
           </Button>
-          {confirming ? (
-            <>
-              <Button
-                variant="danger"
-                size="sm"
-                loading={remove.isPending}
-                onClick={() => remove.mutate(doc.id, { onSuccess: () => navigate('/', { replace: true }) })}
-              >
-                Confirm deletion
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
-                Cancel
-              </Button>
-            </>
-          ) : (
-            <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>
-              <Trash2 className="sm-ico" style={{ width: 16, height: 16 }} aria-hidden />
-              Delete
-            </Button>
-          )}
+          <Button variant="danger-soft" size="sm" onPress={dialog.open}>
+            <Trash2 className="size-4" aria-hidden />
+            Delete
+          </Button>
         </div>
       </header>
 
-      {(download.isError || remove.isError) && (
-        <div className="mt-3">
-          <ErrorAlert>{errorMessage(download.error ?? remove.error)}</ErrorAlert>
-        </div>
-      )}
+      <DeleteDialog
+        state={dialog}
+        filename={doc.filename}
+        isPending={remove.isPending}
+        onConfirm={() => remove.mutate(doc.id, { onSuccess: () => navigate('/', { replace: true }) })}
+      />
 
       {isSpreadsheet ? (
         doc.status === 'ready' ? (
