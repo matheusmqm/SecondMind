@@ -1,7 +1,7 @@
-import { FileSpreadsheet, FileText, RotateCcw } from 'lucide-react'
+import { Accordion, Button, buttonVariants } from '@heroui/react'
+import { ChevronDown, FileSpreadsheet, FileText, RotateCcw } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { ErrorAlert } from '@/components/ui/Alert'
-
+import { ErrorAlert } from '@/components/ui/ErrorAlert'
 import { Answer } from './Answer'
 import { Thinking, useElapsed } from './Thinking'
 
@@ -24,21 +24,35 @@ const TOOL_LABELS = {
 // "How I got this": each tool call the agent made, with the SQL it ran.
 function Trace({ trace }) {
   return (
-    <details className="sm-trace">
-      <summary>How this answer was built ({trace.length} {trace.length === 1 ? 'step' : 'steps'})</summary>
-      <ol>
-        {trace.map((step, index) => (
-          <li key={index} className={step.error ? 'is-error' : undefined}>
-            <span className="sm-trace-name">{TOOL_LABELS[step.tool] ?? step.tool}</span>
-            <span className="sm-trace-sum"> · {step.summary}</span>
-            {step.tool === 'search_documents' && step.input?.query && (
-              <code className="sm-trace-code">{step.input.query}</code>
-            )}
-            {step.tool === 'run_sql' && step.input?.query && <code className="sm-trace-code">{step.input.query}</code>}
-          </li>
-        ))}
-      </ol>
-    </details>
+    <Accordion className="mb-3">
+      <Accordion.Item id="trace">
+        <Accordion.Heading>
+          <Accordion.Trigger>
+            How this answer was built ({trace.length} {trace.length === 1 ? 'step' : 'steps'})
+            <Accordion.Indicator>
+              <ChevronDown className="size-4" aria-hidden />
+            </Accordion.Indicator>
+          </Accordion.Trigger>
+        </Accordion.Heading>
+        <Accordion.Panel>
+          <Accordion.Body>
+            <ol className="m-0 list-decimal space-y-2 pl-5 text-sm">
+              {trace.map((step, index) => (
+                <li key={index} className={step.error ? 'text-danger' : undefined}>
+                  <span className="font-medium">{TOOL_LABELS[step.tool] ?? step.tool}</span>
+                  <span className="text-muted"> · {step.summary}</span>
+                  {(step.tool === 'search_documents' || step.tool === 'run_sql') && step.input?.query && (
+                    <code className="mt-1 block overflow-x-auto rounded-lg bg-default p-2 font-mono text-xs whitespace-pre-wrap text-foreground">
+                      {step.input.query}
+                    </code>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </Accordion.Body>
+        </Accordion.Panel>
+      </Accordion.Item>
+    </Accordion>
   )
 }
 
@@ -48,7 +62,9 @@ export function ChatTurn({ message, onRetry }) {
 
   return (
     <>
-      <p className="sm-msg-user">{message.question}</p>
+      <p className="m-0 mb-4 ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-sm bg-accent-soft px-4 py-2 text-accent-soft-foreground [overflow-wrap:anywhere]">
+        {message.question}
+      </p>
 
       {pending && <Thinking label="Searching the documents" seconds={elapsed} />}
 
@@ -56,7 +72,7 @@ export function ChatTurn({ message, onRetry }) {
         <>
           <Answer text={message.answer} />
           {message.sources?.length > 0 && (
-            <div className="sm-refs" aria-label="Sources" style={{ marginBottom: 'var(--space-3)' }}>
+            <div className="mb-3 flex flex-wrap gap-2" aria-label="Sources">
               {message.sources.map((source) => {
                 const Icon = source.kind === 'sheet' ? FileSpreadsheet : FileText
                 return (
@@ -67,10 +83,10 @@ export function ChatTurn({ message, onRetry }) {
                         ? `/documents/${source.document_id}`
                         : `/documents/${source.document_id}?page=${source.page_start}`
                     }
-                    className="sm-sugg"
+                    className={buttonVariants({ variant: 'secondary', size: 'sm' })}
                     title={source.sql ? `${source.filename}\n${source.sql}` : `Open ${source.filename}`}
                   >
-                    <Icon className="sm-ico" style={{ width: 14, height: 14 }} aria-hidden />
+                    <Icon className="size-3.5" aria-hidden />
                     <span>
                       [{source.ref}] {source.filename}, {sourceLabel(source)}
                     </span>
@@ -80,7 +96,7 @@ export function ChatTurn({ message, onRetry }) {
             </div>
           )}
           {message.trace?.length > 0 && <Trace trace={message.trace} />}
-          <div className="sm-meta-note">
+          <div className="mb-5 flex flex-wrap gap-x-3 text-xs text-muted">
             {message.latencyMs != null && <span>{seconds(message.latencyMs)}</span>}
             {message.usage && (
               <span title={`${message.usage.input_tokens} input / ${message.usage.output_tokens} output tokens`}>
@@ -93,12 +109,12 @@ export function ChatTurn({ message, onRetry }) {
       )}
 
       {message.status === 'error' && (
-        <div style={{ marginBottom: 'var(--space-5)' }}>
+        <div className="mb-5">
           <ErrorAlert>{message.error}</ErrorAlert>
-          <button type="button" className="sm-btn sm-btn--ghost sm-btn--sm mt-2" onClick={() => onRetry(message.id)}>
-            <RotateCcw className="sm-ico" style={{ width: 16, height: 16 }} aria-hidden />
+          <Button size="sm" variant="ghost" className="mt-2" onPress={() => onRetry(message.id)}>
+            <RotateCcw className="size-4" aria-hidden />
             Try again
-          </button>
+          </Button>
         </div>
       )}
     </>

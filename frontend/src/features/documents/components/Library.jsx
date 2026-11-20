@@ -1,6 +1,6 @@
-import { Search } from 'lucide-react'
+import { Chip, Label, SearchField, Skeleton } from '@heroui/react'
 import { useMemo, useState } from 'react'
-import { ErrorAlert } from '@/components/ui/Alert'
+import { ErrorAlert } from '@/components/ui/ErrorAlert'
 import { errorMessage } from '@/lib/utils'
 import { useDocuments } from '../useDocuments'
 import { Dropzone } from './Dropzone'
@@ -22,34 +22,31 @@ export function Library() {
     <div>
       <Dropzone compact={total > 0} />
 
-      <div className="sm-section-title" style={{ marginTop: 'var(--space-6)' }}>
-        <h2 className="eyebrow">Uploaded files</h2>
+      <div className="mt-6 mb-3 flex items-center justify-between">
+        <h2 className="m-0 text-xs font-semibold uppercase tracking-wider text-muted">Uploaded files</h2>
         {total > 0 && (
-          <span className="sm-tag" aria-live="polite">
+          <Chip size="sm" aria-live="polite">
             {shown.length === total ? `${total} ${total === 1 ? 'file' : 'files'}` : `${shown.length} of ${total}`}
-          </span>
+          </Chip>
         )}
       </div>
 
       {total > 4 && (
-        <div className="sm-search mb-4">
-          <Search className="sm-ico" aria-hidden />
-          <input
-            type="search"
-            className="sm-input sm-input--icon"
-            placeholder="Search by file name"
-            aria-label="Search files by name"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </div>
+        <SearchField fullWidth className="mb-4" value={query} onChange={setQuery} aria-label="Search files by name">
+          <Label className="sr-only">Search files by name</Label>
+          <SearchField.Group>
+            <SearchField.SearchIcon />
+            <SearchField.Input placeholder="Search by file name" />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
       )}
 
       <section aria-label="File list">
         {documents.isPending && (
-          <div className="sm-stack" aria-hidden>
+          <div className="space-y-2" aria-hidden>
             {[0, 1, 2].map((i) => (
-              <div key={i} className="sm-skeleton" />
+              <Skeleton key={i} className="h-16 w-full rounded-2xl" />
             ))}
           </div>
         )}
@@ -57,16 +54,16 @@ export function Library() {
         {documents.isError && <ErrorAlert>{errorMessage(documents.error)}</ErrorAlert>}
 
         {documents.data && total === 0 && (
-          <div className="sm-empty">
-            <p className="sm-empty-title">No documents uploaded</p>
-            <p className="m-0 mt-1">Upload your first file above to start asking questions about your base.</p>
+          <div className="rounded-2xl border border-dashed border-border p-6 text-center text-muted">
+            <p className="m-0 font-medium text-foreground">No documents uploaded</p>
+            <p className="m-0 mt-1 text-sm">Upload your first file above to start asking questions about your base.</p>
           </div>
         )}
 
-        {total > 0 && shown.length === 0 && <p className="sm-empty m-0">No documents found for “{query}”.</p>}
+        {total > 0 && shown.length === 0 && <p className="m-0 text-muted">No documents found for “{query}”.</p>}
 
         {shown.length > 0 && (
-          <div className="sm-stack">
+          <div className="space-y-2">
             {shown.map((doc) => (
               <FileCard key={doc.id} doc={doc} />
             ))}

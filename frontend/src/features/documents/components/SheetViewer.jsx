@@ -1,14 +1,48 @@
+import { Card, Spinner, Table, Tabs } from '@heroui/react'
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
-import { ErrorAlert } from '@/components/ui/Alert'
-import { Spinner } from '@/components/ui/Spinner'
-import { errorMessage } from '@/lib/utils'
+import { ErrorAlert } from '@/components/ui/ErrorAlert'
+import { cn, errorMessage } from '@/lib/utils'
 import { getPreview } from '../api'
 
 const cell = (value) => {
   if (value === null || value === undefined) return ''
   if (typeof value === 'number') return value.toLocaleString('en-US', { maximumFractionDigits: 4 })
   return String(value)
+}
+
+function SheetTable({ sheet }) {
+  return (
+    <>
+      <Table>
+        <Table.ScrollContainer className="max-h-[65vh] overflow-auto">
+          <Table.Content aria-label={`Preview of ${sheet.name}`} className="min-w-[600px]">
+            <Table.Header>
+              {sheet.columns.map((column, index) => (
+                <Table.Column key={column} id={column} isRowHeader={index === 0}>
+                  {column}
+                </Table.Column>
+              ))}
+            </Table.Header>
+            <Table.Body>
+              {sheet.rows.map((row, rowIndex) => (
+                <Table.Row key={rowIndex} id={rowIndex}>
+                  {row.map((value, i) => (
+                    <Table.Cell key={i} className={cn(typeof value === 'number' && 'text-right tabular-nums')}>
+                      {cell(value)}
+                    </Table.Cell>
+                  ))}
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table.Content>
+        </Table.ScrollContainer>
+      </Table>
+      <p className="m-0 mt-2 text-xs text-muted">
+        Showing {sheet.rows.length.toLocaleString('en-US')} of {sheet.total_rows.toLocaleString('en-US')} rows. Column
+        names are normalized (lowercase, no accents) so they can be used in queries.
+      </p>
+    </>
+  )
 }
 
 // Read-only preview of a spreadsheet: one tab per sheet, first rows only.
@@ -18,66 +52,45 @@ export function SheetViewer({ documentId }) {
     queryFn: () => getPreview(documentId),
     staleTime: 5 * 60 * 1000,
   })
-  const [active, setActive] = useState(0)
 
   if (preview.isPending) {
     return (
-      <div className="sm-sheet grid place-items-center" role="status" style={{ minHeight: 240 }}>
+      <Card className="grid min-h-60 place-items-center" role="status">
         <Spinner />
-      </div>
+      </Card>
     )
   }
   if (preview.isError) return <ErrorAlert>{errorMessage(preview.error)}</ErrorAlert>
 
   const sheets = preview.data.sheets
-  const sheet = sheets[Math.min(active, sheets.length - 1)]
+
+  if (sheets.length === 1) {
+    return (
+      <Card>
+        <SheetTable sheet={sheets[0]} />
+      </Card>
+    )
+  }
 
   return (
-    <div className="sm-sheet" style={{ padding: 'var(--space-4)' }}>
-      {sheets.length > 1 && (
-        <div className="sm-refs" role="tablist" aria-label="Sheets">
-          {sheets.map((item, index) => (
-            <button
-              key={item.name}
-              type="button"
-              role="tab"
-              aria-selected={index === active}
-              className="sm-sugg"
-              style={index === active ? { background: 'var(--paper-sunken)', color: 'var(--ink)' } : undefined}
-              onClick={() => setActive(index)}
-            >
-              {item.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="sm-tablewrap" style={{ maxHeight: '65vh', overflow: 'auto' }}>
-        <table className="sm-table">
-          <thead>
-            <tr>
-              {sheet.columns.map((column) => (
-                <th key={column}>{column}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sheet.rows.map((row, index) => (
-              <tr key={index}>
-                {row.map((value, i) => (
-                  <td key={i} className={typeof value === 'number' ? 'is-num' : undefined}>
-                    {cell(value)}
-                  </td>
-                ))}
-              </tr>
+    <Card>
+      <Tabs defaultSelectedKey={sheets[0].name}>
+        <Tabs.ListContainer>
+          <Tabs.List aria-label="Sheets">
+            {sheets.map((sheet) => (
+              <Tabs.Tab key={sheet.name} id={sheet.name}>
+                {sheet.name}
+                <Tabs.Indicator />
+              </Tabs.Tab>
             ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="sm-meta-note" style={{ margin: 'var(--space-2) 0 0' }}>
-        Showing {sheet.rows.length.toLocaleString('en-US')} of {sheet.total_rows.toLocaleString('en-US')} rows. Column
-        names are normalized (lowercase, no accents) so they can be used in queries.
-      </p>
-    </div>
+          </Tabs.List>
+        </Tabs.ListContainer>
+        {sheets.map((sheet) => (
+          <Tabs.Panel key={sheet.name} id={sheet.name} className="pt-4">
+            <SheetTable sheet={sheet} />
+          </Tabs.Panel>
+        ))}
+      </Tabs>
+    </Card>
   )
 }

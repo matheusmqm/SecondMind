@@ -1,3 +1,4 @@
+import { Spinner } from '@heroui/react'
 import { useEffect, useState } from 'react'
 
 /** Seconds since `active` became true. */
@@ -12,15 +13,11 @@ export function useElapsed(active) {
   return seconds
 }
 
-// Three pulsing dots while the assistant searches the files.
+// Spinner and a timer while the assistant searches the files.
 export function Thinking({ label, seconds }) {
   return (
-    <div className="sm-thinking" role="status">
-      <span className="sm-dots" aria-hidden>
-        <i />
-        <i />
-        <i />
-      </span>
+    <div className="mb-4 flex items-center gap-2 text-sm text-muted" role="status">
+      <Spinner size="sm" />
       <span>
         {label}… {seconds}s{seconds >= 20 && ' · This may take a few more moments.'}
       </span>

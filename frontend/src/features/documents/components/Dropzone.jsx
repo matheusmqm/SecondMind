@@ -1,13 +1,12 @@
+import { Button, Chip, Spinner, Surface } from '@heroui/react'
 import { CircleCheck, CircleX, Upload, X } from 'lucide-react'
-import { useRef, useState, } from 'react'
-import { ErrorAlert } from '@/components/ui/Alert'
-import { FileStamp } from '@/components/ui/FileStamp'
-import { Spinner } from '@/components/ui/Spinner'
+import { useRef, useState } from 'react'
+import { ErrorAlert } from '@/components/ui/ErrorAlert'
+import { FileTypeChip } from '@/components/ui/FileTypeChip'
 import { cn, fileExtension, MAX_UPLOAD_MB } from '@/lib/utils'
 import { ACCEPT_ATTR, useUploadQueue } from '../useDocuments'
 
-
-
+// Drag-and-drop area (the free HeroUI set has no DropZone, so the area is a styled Surface).
 export function Dropzone({ compact = false }) {
   const queue = useUploadQueue()
   const input = useRef(null)
@@ -30,11 +29,16 @@ export function Dropzone({ compact = false }) {
 
   return (
     <div>
-      <div
+      <Surface
+        variant="secondary"
         role="button"
         tabIndex={0}
         aria-label="Upload files (PDF, Excel or CSV): drag them here or click to choose"
-        className={cn('sm-drop', compact && 'sm-drop--compact', over && 'is-over')}
+        className={cn(
+          'flex cursor-pointer items-center gap-4 rounded-2xl border-2 border-dashed border-border p-6 outline-none transition-colors hover:border-accent focus-visible:border-accent',
+          compact ? 'flex-row text-left' : 'flex-col text-center',
+          over && 'border-accent bg-accent-soft',
+        )}
         onClick={() => input.current?.click()}
         onKeyDown={onKey}
         onDragOver={(event) => {
@@ -44,20 +48,18 @@ export function Dropzone({ compact = false }) {
         onDragLeave={() => setOver(false)}
         onDrop={onDrop}
       >
-        <span className="sm-drop-icon" aria-hidden>
-          <Upload className="sm-ico" />
-        </span>
-        <div className="sm-drop-text" style={{ display: 'flex', flexDirection: 'column', alignItems: compact ? 'flex-start' : 'center', gap: 8 }}>
-          <p className="sm-drop-title">
+        <Upload className="size-6 shrink-0 text-accent" aria-hidden />
+        <div className={cn('flex flex-col gap-2', compact ? 'items-start' : 'items-center')}>
+          <p className="m-0 font-medium">
             {over ? 'Drop the files to upload' : 'Drag PDF, Excel or CSV files here or click to select'}
           </p>
-          <div className="sm-row" style={{ margin: 0, justifyContent: compact ? 'flex-start' : 'center' }}>
-            <FileStamp ext="pdf" />
-            <FileStamp ext="xlsx" />
-            <FileStamp ext="csv" />
+          <div className="flex gap-1.5">
+            <FileTypeChip ext="pdf" />
+            <FileTypeChip ext="xlsx" />
+            <FileTypeChip ext="csv" />
           </div>
           {!compact && (
-            <p className="sm-drop-hint">
+            <p className="m-0 text-sm text-muted">
               PDF, Excel (.xlsx) or CSV, up to {MAX_UPLOAD_MB} MB per file. You can upload several at once.
             </p>
           )}
@@ -73,7 +75,7 @@ export function Dropzone({ compact = false }) {
             event.target.value = '' // lets the same file be picked again
           }}
         />
-      </div>
+      </Surface>
 
       {queue.rejected.length > 0 && (
         <div className="mt-3">
@@ -83,9 +85,9 @@ export function Dropzone({ compact = false }) {
                 <li key={message}>{message}</li>
               ))}
             </ul>
-            <button type="button" className="sm-link mt-1" onClick={queue.clearRejected}>
+            <Button size="sm" variant="ghost" className="mt-1" onPress={queue.clearRejected}>
               Dismiss
-            </button>
+            </Button>
           </ErrorAlert>
         </div>
       )}
@@ -93,39 +95,38 @@ export function Dropzone({ compact = false }) {
       {queue.items.length > 0 && (
         <ul className="m-0 mt-3 list-none space-y-2 p-0" aria-label="Uploads in progress">
           {queue.items.map((item) => (
-            <li
-              key={item.id}
-              className="sm-rise flex items-center gap-3 rounded-lg border border-line bg-paper-raised px-3 py-2"
-            >
-              <FileStamp ext={fileExtension(item.name)} />
-              <span className="min-w-0 flex-1 truncate text-[14px]">{item.name}</span>
-              {item.status === 'uploading' && (
-                <span className="flex items-center gap-2 text-[13px] text-ink-muted" role="status">
-                  <Spinner /> Uploading…
-                </span>
-              )}
-              {item.status === 'done' && (
-                <span className="sm-status sm-status--ok">
-                  <CircleCheck className="sm-ico" style={{ width: 16, height: 16 }} aria-hidden /> Uploaded
-                </span>
-              )}
-              {item.status === 'error' && (
-                <>
-                  <span className="sm-status sm-status--bad" title={item.error}>
-                    <CircleX className="sm-ico" style={{ width: 16, height: 16 }} aria-hidden />
-                    <span className="max-w-[16rem] truncate">{item.error}</span>
-                  </span>
-                  <button
-                    type="button"
-                    className="sm-iconbtn"
-                    style={{ width: 28, height: 28 }}
-                    aria-label={`Dismiss notice for ${item.name}`}
-                    onClick={() => queue.dismiss(item.id)}
-                  >
-                    <X className="sm-ico" style={{ width: 16, height: 16 }} aria-hidden />
-                  </button>
-                </>
-              )}
+            <li key={item.id}>
+              <Surface className="flex items-center gap-3 rounded-xl px-3 py-2">
+                <FileTypeChip ext={fileExtension(item.name)} />
+                <span className="min-w-0 flex-1 truncate text-sm">{item.name}</span>
+                {item.status === 'uploading' && (
+                  <Chip size="sm" role="status">
+                    <Spinner size="sm" color="current" /> Uploading…
+                  </Chip>
+                )}
+                {item.status === 'done' && (
+                  <Chip size="sm" color="success" variant="soft">
+                    <CircleCheck className="size-3.5" aria-hidden /> Uploaded
+                  </Chip>
+                )}
+                {item.status === 'error' && (
+                  <>
+                    <Chip size="sm" color="danger" variant="soft" title={item.error}>
+                      <CircleX className="size-3.5" aria-hidden />
+                      <span className="max-w-64 truncate">{item.error}</span>
+                    </Chip>
+                    <Button
+                      isIconOnly
+                      size="sm"
+                      variant="ghost"
+                      aria-label={`Dismiss notice for ${item.name}`}
+                      onPress={() => queue.dismiss(item.id)}
+                    >
+                      <X className="size-4" aria-hidden />
+                    </Button>
+                  </>
+                )}
+              </Surface>
             </li>
           ))}
         </ul>
